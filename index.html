@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="DocKL - Ứng dụng đọc truyện chuyên nghiệp" />
+  <meta name="theme-color" content="#0f0f1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>DocKL — Đọc Truyện</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Noto+Serif:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ==================== LIBRARY VIEW ==================== -->
+    <div id="library-view" class="view active">
+      <header class="app-header">
+        <div class="header-left">
+          <h1 class="logo">📖 DocKL</h1>
+        </div>
+        <div class="header-right">
+          <button id="btn-export" class="icon-btn" title="Xuất dữ liệu" aria-label="Xuất dữ liệu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </button>
+          <button id="btn-import" class="icon-btn" title="Nhập dữ liệu" aria-label="Nhập dữ liệu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </button>
+          <input type="file" id="import-file-input" accept=".json" hidden />
+        </div>
+      </header>
+
+      <div class="search-filter-bar">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" class="search-input" placeholder="Tìm truyện..." autocomplete="off" />
+        </div>
+        <select id="sort-select" class="sort-select">
+          <option value="newest">Mới nhất</option>
+          <option value="reading">Đang đọc</option>
+          <option value="alpha">A → Z</option>
+        </select>
+      </div>
+
+      <div id="story-grid" class="story-grid"></div>
+
+      <div id="empty-state" class="empty-state hidden">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="25" y="15" width="50" height="70" rx="4" stroke="#555" stroke-width="2" fill="#1a1a2e"/>
+          <rect x="45" y="20" width="50" height="70" rx="4" stroke="#555" stroke-width="2" fill="#252540"/>
+          <line x1="55" y1="35" x2="85" y2="35" stroke="#666" stroke-width="2"/>
+          <line x1="55" y1="45" x2="80" y2="45" stroke="#555" stroke-width="1.5"/>
+          <line x1="55" y1="53" x2="82" y2="53" stroke="#555" stroke-width="1.5"/>
+          <line x1="55" y1="61" x2="75" y2="61" stroke="#555" stroke-width="1.5"/>
+          <circle cx="70" cy="95" r="12" stroke="#7c5cff" stroke-width="2" fill="none" opacity="0.5"/>
+          <line x1="70" y1="89" x2="70" y2="101" stroke="#7c5cff" stroke-width="2" opacity="0.5"/>
+          <line x1="64" y1="95" x2="76" y2="95" stroke="#7c5cff" stroke-width="2" opacity="0.5"/>
+        </svg>
+        <h3>Chưa có truyện nào</h3>
+        <p>Nhấn nút <strong>+</strong> để thêm truyện đầu tiên</p>
+      </div>
+
+      <button id="fab-add" class="fab" title="Thêm truyện mới" aria-label="Thêm truyện mới">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <!-- ==================== STORY DETAIL VIEW ==================== -->
+    <div id="detail-view" class="view">
+      <header class="detail-header">
+        <button class="btn-back" data-navigate="library" aria-label="Quay lại">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="detail-header-actions">
+          <button id="btn-edit-story" class="icon-btn" title="Sửa truyện" aria-label="Sửa truyện">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button id="btn-delete-story" class="icon-btn danger" title="Xóa truyện" aria-label="Xóa truyện">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="detail-hero" id="detail-hero">
+        <div class="detail-cover" id="detail-cover"></div>
+        <div class="detail-info">
+          <h2 id="detail-title" class="detail-title"></h2>
+          <p id="detail-author" class="detail-author"></p>
+          <p id="detail-desc" class="detail-desc"></p>
+          <div class="detail-stats" id="detail-stats"></div>
+        </div>
+      </div>
+
+      <button id="btn-continue-read" class="btn-continue hidden">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span>Tiếp tục đọc</span>
+      </button>
+
+      <div class="chapter-section">
+        <div class="chapter-section-header">
+          <h3>Danh sách chương</h3>
+          <button id="btn-add-chapter" class="btn-add-chapter">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Thêm chương</span>
+          </button>
+        </div>
+        <div id="chapters-container" class="chapters-container"></div>
+        <div id="no-chapters" class="no-chapters hidden">
+          <p>Chưa có chương nào. Hãy thêm chương đầu tiên!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== STORY FORM VIEW ==================== -->
+    <div id="story-form-view" class="view">
+      <header class="form-header">
+        <button class="btn-back" data-navigate="back" aria-label="Quay lại">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2 id="story-form-title">Thêm truyện</h2>
+        <button id="btn-save-story" class="btn-save">Lưu</button>
+      </header>
+      <form id="story-form" class="form-body" autocomplete="off">
+        <div class="form-group">
+          <label for="input-story-title">Tên truyện <span class="required">*</span></label>
+          <input type="text" id="input-story-title" name="title" placeholder="Nhập tên truyện..." required />
+        </div>
+        <div class="form-group">
+          <label for="input-story-author">Tác giả</label>
+          <input type="text" id="input-story-author" name="author" placeholder="Nhập tên tác giả..." />
+        </div>
+        <div class="form-group">
+          <label for="input-story-desc">Mô tả</label>
+          <textarea id="input-story-desc" name="description" placeholder="Mô tả ngắn về truyện..." rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Màu bìa</label>
+          <div id="gradient-picker" class="gradient-picker"></div>
+        </div>
+      </form>
+    </div>
+
+    <!-- ==================== CHAPTER FORM VIEW ==================== -->
+    <div id="chapter-form-view" class="view">
+      <header class="form-header">
+        <button class="btn-back" data-navigate="back" aria-label="Quay lại">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h2 id="chapter-form-title">Thêm chương</h2>
+        <button id="btn-save-chapter" class="btn-save">Lưu</button>
+      </header>
+      <form id="chapter-form" class="form-body" autocomplete="off">
+        <div class="form-group">
+          <label for="input-chapter-title">Tiêu đề chương <span class="required">*</span></label>
+          <input type="text" id="input-chapter-title" name="title" placeholder="VD: Chương 1: Khởi đầu..." required />
+        </div>
+        <div class="editor-toolbar">
+          <span id="word-count" class="word-count">0 từ · 0 ký tự</span>
+          <button type="button" id="btn-preview-toggle" class="btn-preview-toggle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span>Xem trước</span>
+          </button>
+        </div>
+        <div class="editor-wrapper">
+          <textarea id="input-chapter-content" name="content" class="chapter-editor" placeholder="Dán hoặc nhập nội dung chương vào đây..."></textarea>
+          <div id="chapter-preview" class="chapter-preview hidden"></div>
+        </div>
+      </form>
+    </div>
+
+    <!-- ==================== READER VIEW ==================== -->
+    <div id="reader-view" class="view">
+      <div class="reader-progress-bar">
+        <div id="reader-progress-fill" class="reader-progress-fill"></div>
+      </div>
+
+      <div id="reader-content" class="reader-content"></div>
+
+      <!-- Controls overlay -->
+      <div id="reader-controls" class="reader-controls hidden">
+        <div class="reader-top-bar">
+          <button id="btn-exit-reader" class="icon-btn" aria-label="Thoát">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="reader-title-wrapper">
+            <span id="reader-chapter-title" class="reader-chapter-title"></span>
+            <span id="reader-chapter-indicator" class="reader-chapter-indicator"></span>
+          </div>
+          <button id="btn-reader-settings" class="icon-btn" aria-label="Cài đặt đọc">
+            <span class="settings-icon-text">Aa</span>
+          </button>
+        </div>
+
+        <div class="reader-bottom-bar">
+          <button id="btn-prev-chapter" class="btn-chapter-nav" aria-label="Chương trước">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>Trước</span>
+          </button>
+          <select id="reader-chapter-select" class="reader-chapter-select" aria-label="Chọn chương"></select>
+          <button id="btn-next-chapter" class="btn-chapter-nav" aria-label="Chương sau">
+            <span>Sau</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Settings panel -->
+      <div id="reader-settings" class="reader-settings-panel hidden">
+        <div class="settings-handle"></div>
+        <div class="setting-group">
+          <span class="setting-label">Cỡ chữ</span>
+          <div class="setting-control font-size-control">
+            <button id="btn-font-decrease" class="setting-btn" aria-label="Giảm cỡ chữ">A−</button>
+            <span id="font-size-value" class="setting-value">18</span>
+            <button id="btn-font-increase" class="setting-btn" aria-label="Tăng cỡ chữ">A+</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <span class="setting-label">Phông chữ</span>
+          <div class="setting-control toggle-group" id="font-family-toggle">
+            <button class="toggle-btn" data-font="serif">Serif</button>
+            <button class="toggle-btn active" data-font="sans">Sans</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <span class="setting-label">Giao diện</span>
+          <div class="setting-control toggle-group" id="theme-toggle">
+            <button class="toggle-btn theme-btn-light" data-theme="light">
+              <span class="theme-dot" style="background:#fff;border:1px solid #ccc"></span> Sáng
+            </button>
+            <button class="toggle-btn theme-btn-dark active" data-theme="dark">
+              <span class="theme-dot" style="background:#1a1a2e"></span> Tối
+            </button>
+            <button class="toggle-btn theme-btn-sepia" data-theme="sepia">
+              <span class="theme-dot" style="background:#f4e8d3"></span> Sepia
+            </button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <span class="setting-label">Giãn dòng</span>
+          <div class="setting-control toggle-group" id="line-height-toggle">
+            <button class="toggle-btn" data-lh="1.5">Hẹp</button>
+            <button class="toggle-btn active" data-lh="1.8">Vừa</button>
+            <button class="toggle-btn" data-lh="2.2">Rộng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TOAST ==================== -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ==================== MODAL ==================== -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h3 id="modal-title" class="modal-title"></h3>
+        <p id="modal-message" class="modal-message"></p>
+        <div class="modal-actions">
+          <button id="btn-modal-cancel" class="btn-modal btn-modal-cancel">Hủy</button>
+          <button id="btn-modal-confirm" class="btn-modal btn-modal-confirm">Xác nhận</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
