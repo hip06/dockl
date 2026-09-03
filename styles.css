@@ -750,6 +750,48 @@ select {
 
 .required { color: var(--danger); }
 
+/* Chapter Title with Auto-Number Prefix */
+.chapter-title-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.chapter-title-input-wrapper:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.chapter-number-prefix {
+  padding: var(--space-md);
+  padding-right: var(--space-sm);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--accent);
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.chapter-title-input-wrapper input[type="text"] {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: var(--space-md);
+  padding-left: var(--space-xs);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.chapter-title-input-wrapper input[type="text"]::placeholder {
+  color: var(--text-muted);
+}
+
 /* Gradient Picker */
 .gradient-picker {
   display: flex;

@@ -831,6 +831,15 @@
     },
 
     // ==================== CHAPTER FORM ====================
+    // Helper: parse "Chương X: ..." prefix from a chapter title
+    _parseChapterTitle(fullTitle) {
+      const match = (fullTitle || '').match(/^Chương\s+(\d+)\s*[:\-–—]\s*(.*)$/);
+      if (match) {
+        return { num: parseInt(match[1], 10), title: match[2].trim() };
+      }
+      return { num: null, title: (fullTitle || '').trim() };
+    },
+
     async renderChapterForm() {
       this.activateView('chapter-form-view');
       const titleEl = document.getElementById('chapter-form-title');
@@ -838,6 +847,7 @@
       const inputContent = document.getElementById('input-chapter-content');
       const preview = document.getElementById('chapter-preview');
       const previewBtn = document.getElementById('btn-preview-toggle');
+      const prefixEl = document.getElementById('chapter-number-prefix');
 
       preview.classList.add('hidden');
       inputContent.classList.remove('hidden');
@@ -847,15 +857,20 @@
         const ch = await DataStore.getChapter(this.editingChapterId);
         if (!ch) { await this.showView('detail', { storyId: this.currentStoryId }); return; }
         titleEl.textContent = 'Sửa chương';
-        inputTitle.value = ch.title;
+        // Parse out the chapter number prefix so user only edits the title part
+        const parsed = this._parseChapterTitle(ch.title);
+        const chapterNum = parsed.num ?? (ch.order + 1);
+        prefixEl.textContent = `Chương ${chapterNum}:`;
+        inputTitle.value = parsed.title;
         inputContent.value = ch.content || '';
       } else {
         const chapters = await DataStore.getChapters(this.currentStoryId);
         const nextNum = chapters.length + 1;
         titleEl.textContent = 'Thêm chương';
+        prefixEl.textContent = `Chương ${nextNum}:`;
         inputTitle.value = '';
         inputContent.value = '';
-        inputTitle.placeholder = `VD: Chương ${nextNum}: ...`;
+        inputTitle.placeholder = 'Nhập tiêu đề...';
       }
 
       this.updateWordCount();
@@ -896,9 +911,11 @@
       this._autoSaveTimer = setInterval(async () => {
         if (this.currentView !== 'chapterForm') { this.stopAutoSave(); return; }
         if (!this.editingChapterId) return;
-        const title = document.getElementById('input-chapter-title').value.trim();
+        const userTitle = document.getElementById('input-chapter-title').value.trim();
         const content = document.getElementById('input-chapter-content').value;
-        if (title || content) {
+        const prefix = document.getElementById('chapter-number-prefix').textContent.trim();
+        if (userTitle || content) {
+          const title = userTitle ? `${prefix} ${userTitle}` : '';
           await DataStore.updateChapter(this.currentStoryId, this.editingChapterId, { title, content });
         }
       }, 30000);
@@ -912,14 +929,18 @@
     },
 
     async saveChapter() {
-      const title = document.getElementById('input-chapter-title').value.trim();
+      const userTitle = document.getElementById('input-chapter-title').value.trim();
       const content = document.getElementById('input-chapter-content').value;
+      const prefix = document.getElementById('chapter-number-prefix').textContent.trim();
 
-      if (!title) {
+      if (!userTitle) {
         this.toast('Vui lòng nhập tiêu đề chương', 'error');
         document.getElementById('input-chapter-title').focus();
         return;
       }
+
+      // Combine prefix + user title into full chapter title
+      const title = `${prefix} ${userTitle}`;
 
       this.stopAutoSave();
 

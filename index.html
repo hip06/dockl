@@ -155,7 +155,10 @@
       <form id="chapter-form" class="form-body" autocomplete="off">
         <div class="form-group">
           <label for="input-chapter-title">Tiêu đề chương <span class="required">*</span></label>
-          <input type="text" id="input-chapter-title" name="title" placeholder="VD: Chương 1: Khởi đầu..." required />
+          <div class="chapter-title-input-wrapper">
+            <span id="chapter-number-prefix" class="chapter-number-prefix">Chương 1:</span>
+            <input type="text" id="input-chapter-title" name="title" placeholder="Nhập tiêu đề..." required />
+          </div>
         </div>
         <div class="editor-toolbar">
           <span id="word-count" class="word-count">0 từ · 0 ký tự</span>
