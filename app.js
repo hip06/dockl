@@ -443,14 +443,18 @@
         const data = JSON.parse(jsonStr);
         if (!data.stories || !Array.isArray(data.stories)) return false;
 
+        const isMerge = data._isSingleStory === true;
+
         // Clear existing data and insert new
         await this._multiTx(['stories', 'chapters'], 'readwrite', (tx) => {
           const storyStore = tx.objectStore('stories');
           const chStore = tx.objectStore('chapters');
 
-          // Clear all
-          storyStore.clear();
-          chStore.clear();
+          if (!isMerge) {
+            // Clear all
+            storyStore.clear();
+            chStore.clear();
+          }
 
           // Insert stories and chapters
           for (const s of data.stories) {
@@ -1184,6 +1188,28 @@
       this.toast('Đã xuất dữ liệu ✓', 'success');
     },
 
+    async exportStoryAsJson() {
+      const story = this._cachedStory || await DataStore.getStoryWithChapters(this.currentStoryId);
+      if (!story) { this.toast('Không tìm thấy truyện', 'error'); return; }
+
+      const exportData = {
+        _isSingleStory: true,
+        stories: [story],
+        settings: DataStore.getSettings()
+      };
+
+      const json = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeName = story.title.replace(/[^\w\s\-à-ỹ]/gi, '').replace(/\s+/g, '_').substring(0, 50) || 'story';
+      a.download = `${safeName}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.toast('Đã tải file JSON ✓', 'success');
+    },
+
     async exportStoryAsTxt() {
       const story = this._cachedStory || await DataStore.getStoryWithChapters(this.currentStoryId);
       if (!story) { this.toast('Không tìm thấy truyện', 'error'); return; }
@@ -1383,6 +1409,8 @@
       document.getElementById('btn-download-txt').addEventListener('click', () => this.exportStoryAsTxt());
       const btnDownloadFull = document.getElementById('btn-download-txt-full');
       if (btnDownloadFull) btnDownloadFull.addEventListener('click', () => this.exportStoryAsTxt());
+      const btnDownloadJsonFull = document.getElementById('btn-download-json-full');
+      if (btnDownloadJsonFull) btnDownloadJsonFull.addEventListener('click', () => this.exportStoryAsJson());
 
       document.getElementById('btn-edit-story').addEventListener('click', () => {
         this.showView('storyForm', { storyId: this.currentStoryId });
