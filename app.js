@@ -1179,20 +1179,169 @@
       this.toast('Đã xuất dữ liệu ✓', 'success');
     },
 
+    async exportStoryAsTxt() {
+      const story = this._cachedStory || await DataStore.getStoryWithChapters(this.currentStoryId);
+      if (!story) { this.toast('Không tìm thấy truyện', 'error'); return; }
+
+      const SEP = '═'.repeat(48);
+      const lines = [];
+
+      // Header
+      lines.push(SEP);
+      lines.push('DOCKL STORY');
+      lines.push(SEP);
+      lines.push(`Tiêu đề: ${story.title}`);
+      if (story.author) lines.push(`Tác giả: ${story.author}`);
+      if (story.description) lines.push(`Mô tả: ${story.description}`);
+      lines.push(SEP);
+      lines.push('');
+
+      // Chapters
+      if (story.chapters && story.chapters.length > 0) {
+        story.chapters.forEach((ch, i) => {
+          lines.push('');
+          lines.push(`${'═'.repeat(4)} ${ch.title || `Chương ${i + 1}`} ${'═'.repeat(4)}`);
+          lines.push('');
+          lines.push(ch.content || '');
+          lines.push('');
+        });
+      }
+
+      const text = lines.join('\n');
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      // Sanitize filename
+      const safeName = story.title.replace(/[^\w\s\-à-ỹ]/gi, '').replace(/\s+/g, '_').substring(0, 50) || 'story';
+      a.download = `${safeName}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      this.toast('Đã tải file TXT ✓', 'success');
+    },
+
+    _parseTxtFile(text) {
+      try {
+        const lines = text.split('\n');
+        const SEP_FULL = '═'.repeat(48);
+
+        let title = '';
+        let author = '';
+        let description = '';
+        const chapters = [];
+
+        // Find header section
+        let headerEnd = -1;
+        let headerStart = -1;
+        let sepCount = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line === SEP_FULL || line === 'DOCKL STORY') {
+            sepCount++;
+            if (sepCount === 1) headerStart = i;
+            if (sepCount === 3) { headerEnd = i; break; }
+            continue;
+          }
+          if (headerStart >= 0 && headerEnd < 0) {
+            if (line.startsWith('Tiêu đề:')) title = line.substring('Tiêu đề:'.length).trim();
+            else if (line.startsWith('Tác giả:')) author = line.substring('Tác giả:'.length).trim();
+            else if (line.startsWith('Mô tả:')) description = line.substring('Mô tả:'.length).trim();
+          }
+        }
+
+        if (!title) return null;
+
+        // Find chapters — look for lines matching: ════ Chapter Title ════
+        const chapterPattern = /^[═]{2,}\s+(.+?)\s+[═]{2,}$/;
+        const chapterPositions = [];
+
+        for (let i = headerEnd + 1; i < lines.length; i++) {
+          const match = lines[i].trim().match(chapterPattern);
+          if (match) {
+            chapterPositions.push({ title: match[1], startLine: i + 1 });
+          }
+        }
+
+        // Extract chapter contents
+        for (let c = 0; c < chapterPositions.length; c++) {
+          const start = chapterPositions[c].startLine;
+          const end = c < chapterPositions.length - 1 ? chapterPositions[c + 1].startLine - 1 : lines.length;
+
+          // Collect content lines, trim leading/trailing empty lines
+          const contentLines = lines.slice(start, end);
+          // Find the next chapter separator line and exclude it
+          let lastContentLine = contentLines.length;
+          for (let j = contentLines.length - 1; j >= 0; j--) {
+            if (contentLines[j].trim().match(chapterPattern)) {
+              lastContentLine = j;
+              break;
+            }
+          }
+          const content = contentLines.slice(0, lastContentLine).join('\n').trim();
+
+          chapters.push({
+            title: chapterPositions[c].title,
+            content,
+          });
+        }
+
+        return { title, author, description, chapters };
+      } catch (e) {
+        console.error('TXT parse error:', e);
+        return null;
+      }
+    },
+
     importData() {
       document.getElementById('import-file-input').click();
     },
 
     async handleImportFile(file) {
       if (!file) return;
+
+      const fileName = file.name.toLowerCase();
       const reader = new FileReader();
+
       reader.onload = async (e) => {
-        const success = await DataStore.importData(e.target.result);
-        if (success) {
-          this.toast('Đã nhập dữ liệu thành công ✓', 'success');
-          await this.showView('library');
+        const content = e.target.result;
+
+        if (fileName.endsWith('.txt')) {
+          // Parse TXT and create a new story
+          const parsed = this._parseTxtFile(content);
+          if (!parsed) {
+            this.toast('File TXT không hợp lệ hoặc không đúng định dạng DocKL', 'error');
+            return;
+          }
+
+          // Create story
+          const story = await DataStore.addStory({
+            title: parsed.title,
+            author: parsed.author,
+            description: parsed.description,
+            coverGradient: Math.floor(Math.random() * GRADIENTS.length),
+          });
+
+          // Add chapters
+          for (const ch of parsed.chapters) {
+            await DataStore.addChapter(story.id, {
+              title: ch.title,
+              content: ch.content,
+            });
+          }
+
+          this.toast(`Đã nhập "${parsed.title}" (${parsed.chapters.length} chương) ✓`, 'success');
+          await this.showView('detail', { storyId: story.id });
+
         } else {
-          this.toast('File không hợp lệ', 'error');
+          // JSON import (existing logic)
+          const success = await DataStore.importData(content);
+          if (success) {
+            this.toast('Đã nhập dữ liệu thành công ✓', 'success');
+            await this.showView('library');
+          } else {
+            this.toast('File không hợp lệ', 'error');
+          }
         }
       };
       reader.readAsText(file);
@@ -1226,6 +1375,8 @@
       });
 
       // --- Detail ---
+      document.getElementById('btn-download-txt').addEventListener('click', () => this.exportStoryAsTxt());
+
       document.getElementById('btn-edit-story').addEventListener('click', () => {
         this.showView('storyForm', { storyId: this.currentStoryId });
       });
