@@ -1005,8 +1005,13 @@
       ).join('');
 
       // Nav button states
-      document.getElementById('btn-prev-chapter').disabled = this.currentChapterIndex === 0;
-      document.getElementById('btn-next-chapter').disabled = this.currentChapterIndex >= story.chapters.length - 1;
+      const isFirst = this.currentChapterIndex === 0;
+      const isLast = this.currentChapterIndex >= story.chapters.length - 1;
+      
+      document.getElementById('btn-prev-chapter').disabled = isFirst;
+      document.getElementById('btn-next-chapter').disabled = isLast;
+      document.getElementById('btn-float-prev').disabled = isFirst;
+      document.getElementById('btn-float-next').disabled = isLast;
 
       // Save reading position
       await DataStore.saveReadPosition(this.currentStoryId, this.currentChapterIndex, 0);
@@ -1376,6 +1381,8 @@
 
       // --- Detail ---
       document.getElementById('btn-download-txt').addEventListener('click', () => this.exportStoryAsTxt());
+      const btnDownloadFull = document.getElementById('btn-download-txt-full');
+      if (btnDownloadFull) btnDownloadFull.addEventListener('click', () => this.exportStoryAsTxt());
 
       document.getElementById('btn-edit-story').addEventListener('click', () => {
         this.showView('storyForm', { storyId: this.currentStoryId });
@@ -1501,6 +1508,12 @@
 
       document.getElementById('btn-prev-chapter').addEventListener('click', () => this.navigateChapter(-1));
       document.getElementById('btn-next-chapter').addEventListener('click', () => this.navigateChapter(1));
+      
+      const btnFloatPrev = document.getElementById('btn-float-prev');
+      if (btnFloatPrev) btnFloatPrev.addEventListener('click', () => this.navigateChapter(-1));
+      
+      const btnFloatNext = document.getElementById('btn-float-next');
+      if (btnFloatNext) btnFloatNext.addEventListener('click', () => this.navigateChapter(1));
 
       document.getElementById('reader-chapter-select').addEventListener('change', (e) => {
         this.goToChapter(parseInt(e.target.value));

@@ -575,6 +575,31 @@ select {
   transform: scale(0.97);
 }
 
+.btn-download-txt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin: 0 var(--space-md) var(--space-lg);
+  padding: 14px var(--space-lg);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.btn-download-txt:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--accent);
+}
+
+.btn-download-txt:active {
+  transform: scale(0.97);
+}
+
 /* Chapter Section */
 .chapter-section {
   padding: 0 var(--space-md) var(--space-2xl);
@@ -911,6 +936,53 @@ select {
 #reader-view.active {
   display: flex;
   flex-direction: column;
+}
+
+/* Floating Nav Buttons */
+.btn-float-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--z-controls);
+  width: 50px;
+  height: 80px;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  opacity: 0.3;
+}
+
+.btn-float-nav:hover {
+  background: rgba(124, 92, 255, 0.1);
+  color: var(--accent);
+  opacity: 1;
+}
+
+.btn-float-nav:active {
+  background: rgba(124, 92, 255, 0.2);
+}
+
+.btn-float-prev {
+  left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.btn-float-next {
+  right: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+@media (max-width: 768px) {
+  .btn-float-nav {
+    width: 40px;
+    height: 60px;
+  }
 }
 
 /* Reader Progress Bar */
