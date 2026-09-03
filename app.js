@@ -1253,9 +1253,10 @@
 
     _parseTxtFile(text) {
       try {
-        const lines = text.split('\n');
-        const SEP_FULL = '═'.repeat(48);
+        if (!text || text.trim() === '') return { error: 'File trống' };
 
+        const lines = text.split('\n');
+        
         let title = '';
         let author = '';
         let description = '';
@@ -1273,17 +1274,19 @@
             author = line.substring('Tác giả:'.length).trim();
           } else if (line.startsWith('Mô tả:')) {
             description = line.substring('Mô tả:'.length).trim();
-          } else if (line === SEP_FULL && title !== '') {
-            // We found the separator AFTER the title, which means header is done
+          } else if (line.length >= 10 && line.includes('════') && title !== '') {
+            // We found a separator AFTER the title, which means header is done
+            // Using a loose check just in case mobile editors wrap lines or change chars
             headerEnd = i;
             break;
           }
         }
 
-        if (!title) return null;
+        if (!title) return { error: 'Không tìm thấy "Tiêu đề:" trong file' };
 
-        // Find chapters — look for lines matching: ════ Chapter Title ════
-        const chapterPattern = /^[═]{2,}\s+(.+?)\s+[═]{2,}$/;
+        // Find chapters — look for lines containing: ════ Chapter Title ════
+        // Made regex more forgiving for mobile (fewer equal signs required, optional spaces)
+        const chapterPattern = /^[═]{2,}\s*(.+?)\s*[═]{2,}/;
         const chapterPositions = [];
 
         for (let i = headerEnd + 1; i < lines.length; i++) {
@@ -1298,10 +1301,9 @@
           const start = chapterPositions[c].startLine;
           const end = c < chapterPositions.length - 1 ? chapterPositions[c + 1].startLine - 1 : lines.length;
 
-          // Collect content lines, trim leading/trailing empty lines
           const contentLines = lines.slice(start, end);
-          // Find the next chapter separator line and exclude it
           let lastContentLine = contentLines.length;
+          
           for (let j = contentLines.length - 1; j >= 0; j--) {
             if (contentLines[j].trim().match(chapterPattern)) {
               lastContentLine = j;
@@ -1316,10 +1318,10 @@
           });
         }
 
-        return { title, author, description, chapters };
+        return { data: { title, author, description, chapters } };
       } catch (e) {
         console.error('TXT parse error:', e);
-        return null;
+        return { error: 'Lỗi xử lý file: ' + e.message };
       }
     },
 
@@ -1338,11 +1340,13 @@
 
         if (fileName.endsWith('.txt')) {
           // Parse TXT and create a new story
-          const parsed = this._parseTxtFile(content);
-          if (!parsed) {
-            this.toast('File TXT không hợp lệ hoặc không đúng định dạng DocKL', 'error');
+          const result = this._parseTxtFile(content);
+          if (result.error) {
+            this.toast('Lỗi import: ' + result.error, 'error');
             return;
           }
+          
+          const parsed = result.data;
 
           // Create story
           const story = await DataStore.addStory({
