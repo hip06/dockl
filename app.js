@@ -1263,21 +1263,20 @@
 
         // Find header section
         let headerEnd = -1;
-        let headerStart = -1;
-        let sepCount = 0;
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
-          if (line === SEP_FULL || line === 'DOCKL STORY') {
-            sepCount++;
-            if (sepCount === 1) headerStart = i;
-            if (sepCount === 3) { headerEnd = i; break; }
-            continue;
-          }
-          if (headerStart >= 0 && headerEnd < 0) {
-            if (line.startsWith('Tiêu đề:')) title = line.substring('Tiêu đề:'.length).trim();
-            else if (line.startsWith('Tác giả:')) author = line.substring('Tác giả:'.length).trim();
-            else if (line.startsWith('Mô tả:')) description = line.substring('Mô tả:'.length).trim();
+          
+          if (line.startsWith('Tiêu đề:')) {
+            title = line.substring('Tiêu đề:'.length).trim();
+          } else if (line.startsWith('Tác giả:')) {
+            author = line.substring('Tác giả:'.length).trim();
+          } else if (line.startsWith('Mô tả:')) {
+            description = line.substring('Mô tả:'.length).trim();
+          } else if (line === SEP_FULL && title !== '') {
+            // We found the separator AFTER the title, which means header is done
+            headerEnd = i;
+            break;
           }
         }
 
